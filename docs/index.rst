@@ -10,11 +10,14 @@ After registration it gives you access to the graph, allowing for such applicati
 * Posting to a users profile
 * Open graph beta functionality
 
-For a demo of the signup flow have a look at Fashiolista's landing page (`fashiolista.com <http://www.fashiolista.com/intro_wide_minimal/>`_)
+For a demo of the signup flow have a look at Fashiolista's landing page
+(`fashiolista.com <http://www.fashiolista.com/intro_wide_minimal/>`_)
 
 Contributions are welcome!!
 Contact me here or `@tschellenbach <http://www.twitter.com/tschellenbach>`_
-Updates and tutorials can be found on my blog `mellowmorning <http://www.mellowmorning.com/>`_
+Updates and tutorials can be found on my blog `mellowmorning`_
+
+.. _mellowmorning: http://www.mellowmorning.com/
 
 
 About Django Facebook
@@ -47,10 +50,14 @@ improve support for canvas apps and some other stuff.
 
 Requirements
 ============
-* Django_ >= 1.3
-* Django registration or Django Userena (contact me if you use something else for registration.) 
+* `Django`_ >= 1.3
+* `Django registration`_ or `Django Userena`_ (please contact me if
+  you use something else for registration). 
 
-.. _Django : https://www.djangoproject.com/
+.. _`Django` : https://www.djangoproject.com/
+.. _`Django registration`: https://bitbucket.org/ubernostrum/django-registration
+.. _`Django Userena`: http://django-userena.org/
+
 
 Generated documentation
 =======================
