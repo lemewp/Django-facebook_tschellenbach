@@ -1,14 +1,21 @@
-<html>
-	<head>
-	</head>
-	<body>
-		
-		{% block content %}
-		
-		{% endblock %}
-	
-	
+<!DOCTYPE html>
+{### Base template for canvas pages ###########################################}
+<html><head>
+    <title>{{ page_title|default:"Django-facebook canvas app" }}</title>
+    {% block extrahead %}{% endblock extrahead %}
+</head><body>
+
+    <!-- The main content for the canvas page -->
+	{% block content %}
+        <!-- Some default content -->
+        <h1>It works!</h1>
+        <p>Welcome to this django-facebook powered canvas page.</p>
+    {% endblock content %}
+    
+    <!-- Include Facebook JavaScript SDK -->
 	{% include 'django_facebook/_facebook_js.html' %}
-	
-	</body>
-</html>
+    
+    <!-- Extra JavaScript in the footer -->
+    {% block footerjs %}{% endblock footerjs %}
+
+</body></html>

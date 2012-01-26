@@ -1,11 +1,10 @@
-<html>
-    <head>
-        <script>
-            var authUrl = '{{ location|safe }}';
-            top.location.href=authUrl;
-        </script>
-    </head>
-    <body>
-        Redirecting you to <a href="{{ location }}">{{ location }}</a>
-    </body>
-</html>
+<!DOCTYPE html>
+{% load i18n %}
+<html><head>
+    <script type="text/javascript">
+        var authUrl = '{{ location|safe }}';
+        top.location.href=authUrl;
+    </script>
+</head><body>
+    {% blocktrans %}Redirecting you to <a href="{{ location }}" target="_top">{{ location }}</a>.{% endblocktrans %}
+</body></html>
