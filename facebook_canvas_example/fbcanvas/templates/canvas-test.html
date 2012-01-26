@@ -1,0 +1,29 @@
+{% extends "django_facebook/_canvas_base.html" %}
+
+{% block content %}
+
+<h1>It works!</h1>
+<p>Welcome to this django-facebook powered canvas page.</p>
+
+{% if fb_user %}
+<img src="https://graph.facebook.com/{{ fb_user.id }}/picture?type=normal" alt="User profile picture" />
+<div>Hello, {{ fb_user.name }}!</div>
+<pre>{{ fb_user }}</pre>
+{% else %}
+<div>You are not authenticated via Facebook!</div>
+{% endif %}
+    
+<h2>Request: method</h2>
+<pre>{{ request.method }}</pre>
+
+<h2>Request: GET</h2>
+<pre>{{ request.GET }}</pre>
+
+<h2>Request: POST</h2>
+<pre>{{ request.POST }}</pre>
+
+<h2>Request: COOKIES</h2>
+<pre>{{ request.COOKIES }}</pre>
+
+
+{% endblock content %}
