@@ -6,4 +6,12 @@ Package: django_facebook
    :maxdepth: 2
 
    api
+   auth_backends
+   connect
    context_processors
+   decorators
+   middleware
+   models
+   urls
+   utils
+   views

@@ -8,28 +8,21 @@ from django.template.context import RequestContext
 from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_exempt
 
-# NOTE: from inside the application, you can directly import the file
-from django_facebook import exceptions as facebook_exceptions, \
-    settings as facebook_settings
-from django_facebook.api import get_persistent_graph, FacebookUserConverter,\
-    require_persistent_graph
-from django_facebook.canvas import generate_oauth_url
+## NOTE: from inside the application, you can directly import the file
+from django_facebook import exceptions as facebook_exceptions, settings as facebook_settings
+from django_facebook.api import get_persistent_graph, FacebookUserConverter, require_persistent_graph
 from django_facebook.connect import CONNECT_ACTIONS, connect_user
+from django_facebook.decorators import facebook_required, facebook_required_lazy
 from django_facebook.utils import next_redirect
-from django_facebook.decorators import (facebook_required,
-                                        facebook_required_lazy)
-from open_facebook.utils import send_warning
 from open_facebook.exceptions import OpenFacebookException
-
+from open_facebook.utils import send_warning
 
 logger = logging.getLogger(__name__)
 
 
 @facebook_required(scope='publish_actions')
 def open_graph_beta(request):
-    '''
-    Simple example on how to do open graph postings
-    '''
+    """Simple example on how to do open graph postings"""
     fb = get_persistent_graph(request)
     entity_url = 'http://www.fashiolista.com/item/2081202/'
     fb.set('me/fashiolista:love', item=entity_url)
@@ -42,12 +35,9 @@ def open_graph_beta(request):
 @facebook_required(scope='publish_stream')
 def wall_post(request):
     fb = get_persistent_graph(request)
-
     message = request.REQUEST.get('message')
     fb.set('me/feed', message=message)
-
     messages.info(request, 'Posted the message to your wall')
-
     return next_redirect(request)
 
 
@@ -68,12 +58,12 @@ def image_upload(request):
 @csrf_exempt
 @facebook_required_lazy(extra_params=dict(facebook_login='1'))
 def connect(request):
-    '''
+    """
     Handles the view logic around connect user
     - (if authenticated) connect the user
     - login
     - register
-    '''
+    """
     context = RequestContext(request)
 
     assert context.get('FACEBOOK_APP_ID'), 'Please specify a facebook app id '\
@@ -130,11 +120,11 @@ def connect(request):
 
 
 def connect_async_ajax(request):
-    '''
+    """
     Not yet implemented:
     The idea is to run the entire connect flow on the background using celery
     Freeing up webserver resources, when facebook has issues
-    '''
+    """
     from django_facebook import tasks as facebook_tasks
     graph = get_persistent_graph(request)
     output = {}
@@ -148,19 +138,19 @@ def connect_async_ajax(request):
 
 
 def poll_connect_task(request, task_id):
-    '''
+    """
     Not yet implemented
-    '''
+    """
     pass
 
 
 @facebook_required_lazy(canvas=True)
 def canvas(request):
-    '''
+    """
     Example of a canvas page.
     Canvas pages require redirects to work using javascript instead of http headers
     The facebook required and facebook required lazy decorator abstract this away
-    '''
+    """
     context = RequestContext(request)
     fb = require_persistent_graph(request)
     likes = fb.get('me/likes')['data']

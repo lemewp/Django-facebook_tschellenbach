@@ -10,15 +10,23 @@ from django_facebook.api import get_persistent_graph
 logger = logging.getLogger(__name__)
 
 
-def facebook_required(view_func=None, scope=fb_settings.FACEBOOK_DEFAULT_SCOPE,
-                      redirect_field_name=REDIRECT_FIELD_NAME, login_url=None, canvas=False):
-    """
-    Decorator which makes the view require the given Facebook perms,
-    redirecting to the log-in page if necessary.
+def facebook_required(view_func=None,
+                      scope=fb_settings.FACEBOOK_DEFAULT_SCOPE,
+                      redirect_field_name=REDIRECT_FIELD_NAME,
+                      login_url=None, canvas=False):
+    """Decorator which makes the view require the given Facebook
+    permissions, redirecting to the authorization page if necessary.
 
-    Note we don't actually query the permissions, we just try in the view
-    and upon a permission error redirect to login_url
-    Querying the permissions would slow down things
+    .. NOTE:: we don't actually query the permissions, we just try
+       in the view and upon a permission error redirect to ``login_url``.
+       This since querying the permissions each time would slow down things.
+    
+    :param view_func: The view function that will be decorated
+    :param scope: List of names of permissions that will be required
+    :param redirect_field_name:
+    :param login_url: URL of the login page, in case permissions
+        checking fails.
+    :param canvas:
     """
     from django_facebook.utils import test_permissions
     scope_list = parse_scope(scope)
@@ -45,11 +53,18 @@ def facebook_required_lazy(view_func=None,
                            scope=fb_settings.FACEBOOK_DEFAULT_SCOPE,
                            redirect_field_name=REDIRECT_FIELD_NAME,
                            login_url=None, extra_params=None, canvas=False):
-    """
-    Decorator which makes the view require the given Facebook perms,
+    """Decorator which makes the view require the given Facebook perms,
     redirecting to the log-in page if necessary.
     Based on exceptions instead of a check up front
     Faster, but more prone to bugs
+    
+    :param view_func: The view function that will be decorated
+    :param scope: List of names of permissions that will be required
+    :param redirect_field_name:
+    :param login_url: URL of the login page, in case permissions
+        checking fails.
+    :param extra_params:
+    :param canvas:
     """
     from django_facebook.utils import test_permissions
     from open_facebook import exceptions as open_facebook_exceptions
@@ -84,9 +99,10 @@ def facebook_required_lazy(view_func=None,
 
 
 def facebook_connect_required():
-    """
-    Makes sure that the user is registered within your
-    application (using facebook)bBefore going on to the next page
+    """Makes sure that the user is registered within your
+    application (using Facebook) before going on to the next page.
+    
+    .. WARNING:: This decorator has not been implemented yet!
     """
     #TODO: BUILD THIS :)
     pass

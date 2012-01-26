@@ -1,5 +1,15 @@
-from django.conf.urls.defaults import patterns, url
+"""Urls for ``django_facebook``.
 
+By default, these urls are defined:
+
+- ``connect/`` -> ``django_facebook.views.connect``
+- ``image_upload/`` -> ``django_facebook.views.image_upload``
+- ``wall_post/`` -> ``django_facebook.views.wall_post``
+- ``canvas/`` -> ``django_facebook.views.canvas``
+
+"""
+
+from django.conf.urls.defaults import patterns, url
 
 urlpatterns = patterns('django_facebook.views',
    url(r'^connect/$', 'connect', name='facebook_connect'),
@@ -9,5 +19,5 @@ urlpatterns = patterns('django_facebook.views',
 )
 
 
-#help autodiscovery a bit
-from django_facebook import admin
+## help autodiscovery a bit
+#from django_facebook import admin
