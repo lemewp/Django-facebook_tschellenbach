@@ -1,6 +1,8 @@
-######################################################################
-Django Facebook by Thierry Schellenbach (`mellowmorning.com <http://www.mellowmorning.com/>`_)
-######################################################################
+===============
+Django Facebook
+===============
+
+by Thierry Schellenbach (`mellowmorning.com <http://www.mellowmorning.com/>`_)
 
 First
 -----

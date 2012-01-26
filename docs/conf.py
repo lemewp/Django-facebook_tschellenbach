@@ -13,7 +13,8 @@
 
 import sys, os
 
-sys.path.append('..')
+#sys.path.append('..')
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'facebook_example.settings'
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -217,3 +218,5 @@ man_pages = [
     ('index', 'djangofacebook', u'Django Facebook Documentation',
      [u'Thierry Schellenbach'], 1)
 ]
+
+todo_include_todos = True

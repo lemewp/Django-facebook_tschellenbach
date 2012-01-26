@@ -17,11 +17,12 @@ class FacebookBackend(backends.ModelBackend):
             profile_query = profile_query.select_related('user')
             profile = None
 
-            #filter on email or facebook id, two queries for better
-            #queryplan with large data sets
+            ## Filter on email or facebook id, two queries for better
+            ## queryplan with large data sets
             if facebook_id:
                 profiles = profile_query.filter(facebook_id=facebook_id)[:1]
                 profile = profiles[0] if profiles else None
+            
             if profile is None and facebook_email:
                 try:
                     profiles = profile_query.filter(
@@ -35,7 +36,7 @@ class FacebookBackend(backends.ModelBackend):
                     profile = user.get_profile() if user else None
 
             if profile:
-                # populate the profile cache while we're getting it anyway
+                ## Populate the profile cache while we're getting it anyway
                 user = profile.user
                 user._profile = profile
                 return user

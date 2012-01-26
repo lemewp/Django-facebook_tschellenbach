@@ -140,9 +140,11 @@ def next_redirect(request, default='/', additional_params=None,
 
 
 def get_profile_class():
-    profile_string = settings.AUTH_PROFILE_MODULE
+    """Gets the class to be used for user profiles.
+    """
+    #profile_string = settings.AUTH_PROFILE_MODULE
+    profile_string = getattr(settings, 'AUTH_PROFILE_MODULE', 'member.UserProfile')
     app_label, model = profile_string.split('.')
-
     return models.get_model(app_label, model)
 
 

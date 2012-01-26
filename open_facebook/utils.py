@@ -8,13 +8,12 @@ URL_PARAM_NO_VALUE_RE = re.compile('(?P<k>[^(&|?)]+)(&|$)')
 
 
 def base64_url_decode_php_style(inp):
-    '''
-    PHP follows a slightly different protocol for base64 url decode.
+    """PHP follows a slightly different protocol for base64 URL decode.
     For a full explanation see:
     http://stackoverflow.com/questions/3302946/how-to-base64-url-decode-in-python
     and
     http://sunilarora.org/parsing-signedrequest-parameter-in-python-bas
-    '''
+    """
     import base64
     padding_factor = (4 - len(inp) % 4) % 4
     inp += "=" * padding_factor
@@ -23,18 +22,16 @@ def base64_url_decode_php_style(inp):
 
 
 def encode_params(params_dict):
-    '''
-    Take the dictionary of params and encode keys and
+    """Take the dictionary of params and encode keys and
     values to ascii if it's unicode
-    '''
+    """
     encoded = [(smart_str(k), smart_str(v)) for k, v in params_dict.items()]
     encoded_dict = dict(encoded)
     return encoded_dict
 
 
 def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
-    """
-    Adapted from django, needed for urlencoding
+    """Adapted from django, needed for urlencoding
     Returns a bytestring version of 's', encoded as specified in 'encoding'.
     If strings_only is True, don't convert (some) non-string-like objects.
     """
@@ -46,9 +43,9 @@ def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
             return str(s)
         except UnicodeEncodeError:
             if isinstance(s, Exception):
-                # An Exception subclass containing non-ASCII data that doesn't
-                # know how to print itself properly. We shouldn't raise a
-                # further exception.
+                ## An Exception subclass containing non-ASCII data that
+                ## doesn't know how to print itself properly.
+                ## We shouldn't raise a further exception.
                 return ' '.join([smart_str(arg, encoding, strings_only,
                         errors) for arg in s])
             return unicode(s).encode(encoding, errors)
@@ -70,9 +67,7 @@ except ImportError:
 
 
 def send_warning(message, request=None, e=None, **extra_data):
-    '''
-    Uses the logging system to send a message to logging and sentry
-    '''
+    """Uses the logging system to send a message to logging and sentry"""
     username = None
     if request and request.user.is_authenticated():
         username = request.user.username
@@ -94,11 +89,12 @@ def send_warning(message, request=None, e=None, **extra_data):
 
 
 def merge_urls(generated_url, human_url):
-    '''
-    merge the generated_url with the human_url following this rules:
-    params introduced by generated_url are kept
-    final params order comes from generated_url
-    there's an hack to support things like this http://url?param&param=value
+    """
+    Merge the ``generated_url`` with the ``human_url`` following this rules:
+    
+    * params introduced by generated_url are kept
+    * final params order comes from generated_url
+    * there's an hack to support things like this http://url?param&param=value
 
      >>> gen = "http://mysite.com?p1=a&p2=b&p3=c&p4=d"
      >>> hum = "http://mysite.com?p4=D&p3=C&p2=B"
@@ -124,7 +120,7 @@ def merge_urls(generated_url, human_url):
     >>> hum = "http://mysite.com?p=1"
     >>> merge_urls(gen, hum)
     u'http://mysite.com?invalidparam&p=1'
-    '''
+    """
     if '?' not in human_url:
         return u'%s' % human_url
 

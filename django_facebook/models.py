@@ -3,11 +3,12 @@ from django.core.urlresolvers import reverse
 
 
 class FacebookProfileModel(models.Model):
-    '''
-    Abstract class to add to your profile model.
-    NOTE: If you don't use this this abstract class, make sure you copy/paste
-    the fields in.
-    '''
+    """Abstract class to add to your profile model.
+    
+    .. NOTE::
+        If you don't use this this abstract class, make sure
+        you copy/paste the fields in your custom model
+    """
     about_me = models.TextField(blank=True)
     facebook_id = models.BigIntegerField(blank=True, unique=True, null=True)
     access_token = models.TextField(
@@ -28,9 +29,8 @@ class FacebookProfileModel(models.Model):
         abstract = True
 
     def post_facebook_registration(self, request):
-        '''
-        Behaviour after registering with facebook
-        '''
+        """Behavior after registering with Facebook.
+        """
         from django_facebook.utils import next_redirect
         default_url = reverse('facebook_connect')
         response = next_redirect(request, default=default_url,
@@ -40,10 +40,9 @@ class FacebookProfileModel(models.Model):
         return response
 
     def get_offline_graph(self):
-        '''
-        Returns a open facebook graph client based on the access token stored
-        in the user's profile
-        '''
+        """Returns a open_facebook graph client based on the
+        access_token stored in the user's profile.
+        """
         from open_facebook.api import OpenFacebook
         if self.access_token:
             graph = OpenFacebook(access_token=self.access_token)
@@ -52,11 +51,9 @@ class FacebookProfileModel(models.Model):
 
 
 class FacebookUser(models.Model):
-    '''
-    Model for storing a users friends
-    '''
-    # in order to be able to easily move these to an another db,
-    # use a user_id and no foreign key
+    """Model for storing a users friends"""
+    ## In order to be able to easily move these to an another db,
+    ## use a user_id and no foreign key
     user_id = models.IntegerField()
     facebook_id = models.BigIntegerField()
     name = models.TextField(blank=True, null=True)
@@ -66,11 +63,9 @@ class FacebookUser(models.Model):
 
 
 class FacebookLike(models.Model):
-    '''
-    Model for storing all of a users fb likes
-    '''
-    # in order to be able to easily move these to an another db,
-    # use a user_id and no foreign key
+    """Model for storing all of a users fb likes"""
+    ## In order to be able to easily move these to an another db,
+    ## use a user_id and no foreign key
     user_id = models.IntegerField()
     facebook_id = models.BigIntegerField()
     name = models.TextField(blank=True, null=True)
