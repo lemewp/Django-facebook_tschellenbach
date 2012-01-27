@@ -1,18 +1,34 @@
+"""Utility functions for ``open_facebook``.
+"""
+
 import logging
 import re
 import sys
 
+try:
+    from django.utils import simplejson as json
+except ImportError:
+    try:
+        import simplejson as json
+    except ImportError:
+        import json
+
 logger = logging.getLogger(__name__)
+
 URL_PARAM_RE = re.compile('(?P<k>[^(=|&)]+)=(?P<v>[^&]+)(&|$)')
 URL_PARAM_NO_VALUE_RE = re.compile('(?P<k>[^(&|?)]+)(&|$)')
 
 
 def base64_url_decode_php_style(inp):
-    """PHP follows a slightly different protocol for base64 URL decode.
+    """PHP follows a slightly different protocol for base64 URL encoding,
+    using ``-`` instead of ``+`` and ``_`` instead of ``/``.
+    Also, it doesn't use ``=`` for padding.
+    
     For a full explanation see:
     http://stackoverflow.com/questions/3302946/how-to-base64-url-decode-in-python
-    and
-    http://sunilarora.org/parsing-signedrequest-parameter-in-python-bas
+    and http://sunilarora.org/parsing-signedrequest-parameter-in-python-bas
+    
+    :param inp: The base64-encoded string to be decoded
     """
     import base64
     padding_factor = (4 - len(inp) % 4) % 4
@@ -22,8 +38,8 @@ def base64_url_decode_php_style(inp):
 
 
 def encode_params(params_dict):
-    """Take the dictionary of params and encode keys and
-    values to ascii if it's unicode
+    """Take the dictionary of parameters and encode keys and
+    values from unicode to ASCII.
     """
     encoded = [(smart_str(k), smart_str(v)) for k, v in params_dict.items()]
     encoded_dict = dict(encoded)
@@ -56,16 +72,6 @@ def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
     else:
         return s
 
-
-try:
-    from django.utils import simplejson as json
-except ImportError:
-    try:
-        import simplejson as json
-    except ImportError:
-        import json
-
-
 def send_warning(message, request=None, e=None, **extra_data):
     """Uses the logging system to send a message to logging and sentry"""
     username = None
@@ -90,36 +96,38 @@ def send_warning(message, request=None, e=None, **extra_data):
 
 def merge_urls(generated_url, human_url):
     """
-    Merge the ``generated_url`` with the ``human_url`` following this rules:
+    Merge the ``generated_url`` with the ``human_url`` following these rules:
     
-    * params introduced by generated_url are kept
-    * final params order comes from generated_url
-    * there's an hack to support things like this http://url?param&param=value
+    - parameters introduced by ``generated_url`` are kept
+    - final parameters order comes from ``generated_url``
+    - there's an hack to support things like this ``http://url?param&param=value``
+    
+    ::
 
-     >>> gen = "http://mysite.com?p1=a&p2=b&p3=c&p4=d"
-     >>> hum = "http://mysite.com?p4=D&p3=C&p2=B"
-     >>> merge_urls(gen, hum)
-     u'http://mysite.com?p1=a&p2=B&p3=C&p4=D'
+        >>> gen = "http://mysite.com?p1=a&p2=b&p3=c&p4=d"
+        >>> hum = "http://mysite.com?p4=D&p3=C&p2=B"
+        >>> merge_urls(gen, hum)
+        u'http://mysite.com?p1=a&p2=B&p3=C&p4=D'
+        
+        >>> gen = "http://mysite.com?id=a&id_s=b&p_id=d"
+        >>> hum = "http://mysite.com?id=A&id_s=B&p_id=D"
+        >>> merge_urls(gen, hum)
+        u'http://mysite.com?id=A&id_s=B&p_id=D'
+        
+        >>> gen = "http://mysite.com?p1=a&p2=b&p3=c&p4=d"
+        >>> hum = "http://mysite.com"
+        >>> merge_urls(gen, hum)
+        u'http://mysite.com'
 
-     >>> gen = "http://mysite.com?id=a&id_s=b&p_id=d"
-     >>> hum = "http://mysite.com?id=A&id_s=B&p_id=D"
-     >>> merge_urls(gen, hum)
-     u'http://mysite.com?id=A&id_s=B&p_id=D'
-
-     >>> gen = "http://mysite.com?p1=a&p2=b&p3=c&p4=d"
-     >>> hum = "http://mysite.com"
-     >>> merge_urls(gen, hum)
-     u'http://mysite.com'
-
-    >>> gen = "http://ad.zanox.com/ppc/?18595160C2000463397T&zpar4=scrapbook&zpar0=e2494344_c4385641&zpar1=not_authenticated&zpar2=unknown_campaign&zpar3=unknown_ref&ULP=http://www.asos.com/ASOS/ASOS-MARS-Loafer-Shoes/Prod/pgeproduct.aspx?iid=1703516&cid=4172&sh=0&pge=2&pgesize=20&sort=-1&clr=Black&affId=2441"
-    >>> hum = "http://ad.zanox.com/ppc/?18595160C2000463397T&zpar3=scrapbook&ULP=http://www.asos.com/ASOS/ASOS-MARS-Loafer-Shoes/Prod/pgeproduct.aspx?iid=1703516&cid=4172&sh=0&pge=2&pgesize=20&sort=-1&clr=Black&affId=2441"
-    >>> merge_urls(gen, hum)
-    u'http://ad.zanox.com/ppc/?18595160C2000463397T&zpar4=scrapbook&zpar0=e2494344_c4385641&zpar1=not_authenticated&zpar2=unknown_campaign&zpar3=scrapbook&ULP=http://www.asos.com/ASOS/ASOS-MARS-Loafer-Shoes/Prod/pgeproduct.aspx?iid=1703516&cid=4172&sh=0&pge=2&pgesize=20&sort=-1&clr=Black&affId=2441'
-
-    >>> gen = "http://mysite.com?invalidparam&p=2"
-    >>> hum = "http://mysite.com?p=1"
-    >>> merge_urls(gen, hum)
-    u'http://mysite.com?invalidparam&p=1'
+        >>> gen = "http://ad.zanox.com/ppc/?18595160C2000463397T&zpar4=scrapbook&zpar0=e2494344_c4385641&zpar1=not_authenticated&zpar2=unknown_campaign&zpar3=unknown_ref&ULP=http://www.asos.com/ASOS/ASOS-MARS-Loafer-Shoes/Prod/pgeproduct.aspx?iid=1703516&cid=4172&sh=0&pge=2&pgesize=20&sort=-1&clr=Black&affId=2441"
+        >>> hum = "http://ad.zanox.com/ppc/?18595160C2000463397T&zpar3=scrapbook&ULP=http://www.asos.com/ASOS/ASOS-MARS-Loafer-Shoes/Prod/pgeproduct.aspx?iid=1703516&cid=4172&sh=0&pge=2&pgesize=20&sort=-1&clr=Black&affId=2441"
+        >>> merge_urls(gen, hum)
+        u'http://ad.zanox.com/ppc/?18595160C2000463397T&zpar4=scrapbook&zpar0=e2494344_c4385641&zpar1=not_authenticated&zpar2=unknown_campaign&zpar3=scrapbook&ULP=http://www.asos.com/ASOS/ASOS-MARS-Loafer-Shoes/Prod/pgeproduct.aspx?iid=1703516&cid=4172&sh=0&pge=2&pgesize=20&sort=-1&clr=Black&affId=2441'
+        
+        >>> gen = "http://mysite.com?invalidparam&p=2"
+        >>> hum = "http://mysite.com?p=1"
+        >>> merge_urls(gen, hum)
+        u'http://mysite.com?invalidparam&p=1'
     """
     if '?' not in human_url:
         return u'%s' % human_url

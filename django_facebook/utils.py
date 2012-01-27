@@ -52,42 +52,48 @@ def test_permissions(request, scope_list, redirect_uri=None):
 
 
 def get_oauth_url(request, scope, redirect_uri=None, extra_params=None):
-    """
-    Returns the oauth url for the given request and scope
-    Request maybe shouldnt be tied to this function, but for now it seems
-    rather ocnvenient
+    """Returns the URL of the Facebook OAuth dialog for this application,
+    asking for specified permissions and redirecting to given
+    ``redirect_uri``.
+    
+    .. TODO:: Should we improve this by always redirecting to a specific
+        location after OAuth, and from then redirect to final destination
+        when the OAuth process is completed?
+    
+    :param request: The current request
+    :param scope: List of permissions that will be required
+    :param redirect_uri: The URI the user will be redirected to after OAuth.
+        Defaults to the current location.
+    :param extra_params: Extra query arguments to be added to redirect_uri
+    :returns: A tuple: ``(oauth_url, redirect_uri)``
     """
     from django_facebook import settings as facebook_settings
     scope = parse_scope(scope)
     query_dict = QueryDict('', True)
     query_dict['scope'] = ','.join(scope)
     query_dict['client_id'] = facebook_settings.FACEBOOK_APP_ID
-    redirect_uri = redirect_uri or request.build_absolute_uri()
-
-    # set attempt=1 to prevent endless redirect loops
-    if 'attempt=1' not in redirect_uri:
-        if '?' not in redirect_uri:
-            redirect_uri += '?attempt=1'
-        else:
-            redirect_uri += '&attempt=1'
-
-    ## Add the extra params if specified
-    ## TODO: re-enable this and fix the url merging!!
-    if extra_params and False:
-        ## From open_facebook.utils import merge_urls
-        ## TODO: Properly merge the url params
-        params_query_dict = QueryDict('', True)
-        params_query_dict.update(extra_params)
-        query_string = params_query_dict.urlencode()
-        if '?' not in redirect_uri:
-            redirect_uri += '?'
-        else:
-            redirect_uri += '&'
-        redirect_uri += query_string
+    
+    ## Create absolute URI from ``redirect_uri``.
+    ## If redirect_uri is None, the current URI will be used.
+    redirect_uri = request.build_absolute_uri(location=redirect_uri)
+    
+    import urlparse
+    _parsed_uri = urlparse.urlparse(redirect_uri)
+    _uri_args = QueryDict(_parsed_uri.query, True)
+    
+    ## Set attempt=1 to prevent endless redirect loops
+    if _uri_args.get('attempt') != '1':
+        _uri_args['attempt'] = '1'
+    
+    ## Add extra_params to redirect_uri
+    if extra_params:
+        _uri_args.update(extra_params)
+    
+    ## Recreate redirect_uri
+    redirect_uri = urlparse.urlunparse(_parsed_uri._replace(query=_uri_args.urlencode()))
 
     query_dict['redirect_uri'] = redirect_uri
-    url = 'https://www.facebook.com/dialog/oauth?'
-    url += query_dict.urlencode()
+    url = 'https://www.facebook.com/dialog/oauth?%s' % query_dict.urlencode()
     return url, redirect_uri
 
 
@@ -114,7 +120,8 @@ def response_redirect(redirect_url, canvas=False):
     """
     if canvas:
         return CanvasRedirect(redirect_url)
-    return HttpResponseRedirect(redirect_url)
+    else:
+        return HttpResponseRedirect(redirect_url)
 
 def next_redirect(request, default='/', additional_params=None,
                   next_key='next', redirect_url=None, canvas=False):
@@ -203,8 +210,8 @@ def get_form_class(backend, request):
     """Will use registration form in the following order:
     
     1. User configured RegistrationForm
-    2. backend.get_form_class(request) from django-registration 0.8
-    3. RegistrationFormUniqueEmail from django-registration < 0.8
+    2. ``backend.get_form_class(request)`` from django-registration 0.8
+    3. ``RegistrationFormUniqueEmail`` from django-registration < 0.8
     """
     from django_facebook import settings as facebook_settings
     form_class = None
@@ -243,16 +250,13 @@ def get_registration_backend():
 
 
 def parse_scope(scope):
-    """Converts ``'email,user_about_me'`` or ``('email','user_about_me')``
-    into a nice, consistent ``['email','user_about_me']``.
-    """
+    """Converts a comma-separated string or a ``tuple`` into a ``list``."""
     if not scope:
         raise ValueError, 'Scope is required'
     if isinstance(scope, basestring):
         scope_list = scope.split(',')
     elif isinstance(scope, (list, tuple)):
         scope_list = list(scope)
-
     return scope_list
 
 
@@ -311,11 +315,13 @@ DROP_QUERY_PARAMS = ['code', 'signed_request', 'state']
 
 
 def cleanup_oauth_url(redirect_uri):
-    """We have to maintain order with respect to the query parameters
+    """We have to maintain order with respect to the query parameters,
     which is a bit of a pain.
     
     .. TODO:: Very hacky will subclass ``QueryDict`` to ``SortedQueryDict``
        at some point And use a decent sort function
+    
+    .. TODO:: Why is all this needed??
     """
     if '?' in redirect_uri:
         redirect_base, redirect_query = redirect_uri.split('?', 1)
@@ -340,8 +346,7 @@ def cleanup_oauth_url(redirect_uri):
 
 
 def get_class_from_string(path, default='raise'):
-    """
-    Return the class specified by the string.
+    """Returns the class specified by the string.
 
     IE: ``django.contrib.auth.models.User`` will return the user class
 
@@ -360,13 +365,11 @@ def get_class_from_string(path, default='raise'):
     try:
         mod = import_module(module)
     except ImportError, e:
-        raise ImproperlyConfigured(
-            'Error loading registration backend %s: "%s"' % (module, e))
+        raise ImproperlyConfigured('Error loading class %s: "%s"' % (module, e))
     try:
         backend_class = getattr(mod, attr)
     except AttributeError:
         if default == 'raise':
             raise ImproperlyConfigured(
-                'Module "%s" does not define a registration ' \
-                'backend named "%s"' % (module, attr))
+                'Module "%s" does not define a class named "%s"' % (module, attr))
     return backend_class

@@ -12,6 +12,10 @@ By default, these urls are defined:
 from django.conf.urls.defaults import patterns, url
 
 urlpatterns = patterns('django_facebook.views',
+    ## Endpoint for OAuth
+    url(r'^oauth/$', 'fb_oauth', name='facebook_oauth'),
+
+
    url(r'^connect/$', 'connect', name='facebook_connect'),
    url(r'^image_upload/$', 'image_upload', name='facebook_image_upload'),
    url(r'^wall_post/$', 'wall_post', name='facebook_wall_post'),

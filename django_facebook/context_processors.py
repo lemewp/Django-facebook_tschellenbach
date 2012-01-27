@@ -20,4 +20,7 @@ def facebook(request):
     default_scope_js = mark_safe(default_scope_js)
     context['FACEBOOK_DEFAULT_SCOPE_JS'] = default_scope_js
 
+    ## TODO: Send a configuration array for use with JavaScript
+    ## TODO: Add some classes to page body, in order to let different CSS customizations for normal and canvas pages
+
     return context

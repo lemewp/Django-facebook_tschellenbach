@@ -99,7 +99,13 @@ TEMPLATE_LOADERS = (
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    
+    ## This should go before CSRF protection, since it will
+    ## skip CSRF checking for posts if there is a valid signed request
+    'django_facebook.middleware.FacebookRequestMiddleware',
+    
     'django.middleware.csrf.CsrfViewMiddleware',
+    
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 )

@@ -64,11 +64,13 @@ def _get_access_token_from_request(request, redirect_uri=None):
     ## Check for OAuth process `code` argument
     at = _exchange_oauth_code_for_access_token(request.REQUEST.get('code'), redirect_uri)
     if at and at['access_token']:
+        at['at_source'] = 'oauth_code'
         return at
     
     ## Check for signed_request argument, or signed cookie
     at = _get_access_token_from_signed_request(request, redirect_uri)
     if at and at['access_token']:
+        at['at_source'] = 'signed_request'
         return at
     
     ## Check whether there is an access_token stored in the user profile
@@ -76,7 +78,10 @@ def _get_access_token_from_request(request, redirect_uri=None):
         profile = request.user.get_profile()
         access_token = getattr(profile, 'access_token', None)
         if access_token:
-            return dict(access_token=access_token)
+            return dict(
+                access_token=access_token,
+                at_source = 'request.user',
+                )
     
     ## No access_token found. Sorry.
     return None

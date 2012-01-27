@@ -1,4 +1,3 @@
-
 '''
 Facebook error classes also see
 http://fbdevwiki.com/wiki/Error_codes#User_Permission_Errors

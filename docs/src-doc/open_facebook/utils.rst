@@ -1,10 +1,6 @@
 ################################################################################
-Package: open_facebook
+Module: utils
 ################################################################################
 
-.. toctree::
-   :maxdepth: 2
-
-   api
-   exceptions
-   utils
+.. automodule:: open_facebook.utils
+    :members:

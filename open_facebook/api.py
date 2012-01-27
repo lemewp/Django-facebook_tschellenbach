@@ -35,14 +35,19 @@ which validates input::
 Currently that would be a bad idea though because of maintenance.
 """
 
-from django.http import QueryDict
-from django_facebook import settings as facebook_settings
-from open_facebook import exceptions as facebook_exceptions
-from open_facebook.utils import json, encode_params, send_warning
 import logging
 import urllib
 import urllib2
+
+from django.http import QueryDict
+
+from django_facebook import settings as facebook_settings
 from django_facebook.utils import to_int
+
+from open_facebook import exceptions as facebook_exceptions
+from open_facebook.utils import json, encode_params, send_warning
+
+
 logger = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 8

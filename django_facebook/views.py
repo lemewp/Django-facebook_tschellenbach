@@ -2,7 +2,8 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, QueryDict, HttpResponseNotAllowed,\
+    HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from django.utils.translation import ugettext as _
@@ -13,12 +14,100 @@ from django_facebook import exceptions as facebook_exceptions, settings as faceb
 from django_facebook.api import get_persistent_graph, FacebookUserConverter, require_persistent_graph
 from django_facebook.connect import CONNECT_ACTIONS, connect_user
 from django_facebook.decorators import facebook_required, facebook_required_lazy
-from django_facebook.utils import next_redirect
+from django_facebook.utils import next_redirect, CanvasRedirect
 from open_facebook.exceptions import OpenFacebookException
 from open_facebook.utils import send_warning
+from open_facebook.api import FacebookAuthorization
 
 logger = logging.getLogger(__name__)
 
+
+### --- FUNCTIONAL VIEWS -------------------------------------------------------
+
+def fb_oauth(request):
+    """View to process the OAuth login via Facebook.
+    
+    This view accepts a GET argument "next" to specify the page where
+    to go upon successful OAuth authentication.
+    This defaults to '/' in order to prevent infinite redirects.
+    """
+    
+    if request.GET.get('next'):
+        request.session['facebook_oauth_next'] = request.GET['next']
+    if not request.session['facebook_oauth_next']:
+        request.session['facebook_oauth_next'] = '/'
+    next_url = request.session['facebook_oauth_next']
+    
+    oauth_code = request.GET.get('code') or None
+    redirect_uri = reversed("django_facebook.views.fb_oauth")
+    
+    error_info = {
+        'error': request.GET.get('error') or None,
+        'error_reason': request.GET.get('error_reason') or None,
+        'error_description': request.GET.get('error_description') or None,
+    }
+    
+    if error_info['error']:
+        if error_info['error_reason'] == 'user_denied':
+            messages.warning(request,
+                             "You must click on the 'Authorize' button in order to log in with Facebook!")
+        else:
+            messages.error(request,
+                           "An error occurred while trying to authenticate on Facebook: %s (%s)" \
+                           % (error_info['error_reason'], error_info['error_description']))
+        return HttpResponseRedirect(next_url)
+    
+    if not oauth_code:
+        ## Start redirecting to the OAuth dialog..
+        import uuid, hashlib
+        ## CSRF prevention
+        _state = str(hashlib.md5(uuid.uuid1()).hexdigest())
+        request.session['facebook_oauth_state'] = _state
+        
+        qd = QueryDict('', True)
+        qd['client_id'] = settings.FACEBOOK_APP_ID
+        qd['redirect_uri'] = redirect_uri
+        qd['state'] = _state
+        
+        dialog_url = "https://www.facebook.com/dialog/oauth?%s" % qd.urlencode()
+        
+        return CanvasRedirect(dialog_url) # Is this needed?? - what about HttpResponseRedirect .. ?
+    
+    else:
+        ## We got an OAuth code
+        if request.REQUEST.get('state') == request.session['facebook_oauth_state']:
+            result = FacebookAuthorization.convert_code(code=oauth_code, redirect_uri=redirect_uri)
+            access_token = result['access_token']
+            request.session['facebook_access_token'] = access_token
+            ## TODO : Trigger a signal here to allow user registration etc.
+            ## TODO: Redirect somewhere else..
+            return HttpResponseRedirect(next_url)
+        else:
+            raise HttpResponseNotAllowed("State doesn't match - you might be victim of CSRF")
+    
+    
+    
+    #https://www.facebook.com/dialog/oauth?
+    #client_id=YOUR_APP_ID&redirect_uri=YOUR_URL
+    #&scope=...
+    
+    #http://YOUR_URL?error_reason=user_denied&
+    #error=access_denied&error_description=The+user+denied+your+request.
+
+    #https://graph.facebook.com/oauth/access_token?
+    # client_id=YOUR_APP_ID&redirect_uri=YOUR_URL&
+    # client_secret=YOUR_APP_SECRET&code=THE_CODE_FROM_ABOVE
+    
+    pass
+
+
+def fb_deauthorize(request):
+    """Deauthorize callback, pinged when an user deauthorizes this app."""
+    pass
+
+
+
+### --- TESTING VIEWS - SHOULD BE MOVED AWAY! ----------------------------------
 
 @facebook_required(scope='publish_actions')
 def open_graph_beta(request):
