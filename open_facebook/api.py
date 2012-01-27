@@ -246,38 +246,44 @@ class FacebookAuthorization(FacebookConnection):
         return response
 
     @classmethod
-    def parse_signed_data(cls, signed_request, secret=facebook_settings.FACEBOOK_APP_SECRET):
-        """Parse a ``signed_request`` from Facebook
+    def parse_signed_data(cls, signed_request, secret=None):
+        """Parse a ``signed_request`` from Facebook.
         
-        Thanks to
-        http://stackoverflow.com/questions/3302946/how-to-base64-url-decode-in-python
-        and
-        http://sunilarora.org/parsing-signedrequest-parameter-in-python-bas
+        Thanks to http://stackoverflow.com/questions/3302946/how-to-base64-url-decode-in-python
+        and http://sunilarora.org/parsing-signedrequest-parameter-in-python-bas
+        
+        :param signed_request: The signed request to be verified.
+            This is a string containing two dot-separated parts: signature
+            and data. Each part is (PHP-style) base64-encoded.
+            Signature is a HMAC-SHA256 signature of the data, using APP_SECRET
+            as the key. Data is a JSON-encoded object.
+        :param secret: The key to be used to verify signature.
+            Defaults to ``FACEBOOK_APP_SECRET`` from settings.
+        :returns: The decoded data object if signature is valid, else ``None``.
         """
         from open_facebook.utils import base64_url_decode_php_style
         import hmac
         import hashlib
         
-        l = signed_request.split('.', 2)
-        encoded_sig = l[0]
-        payload = l[1]
+        if secret is None:
+            secret = facebook_settings.FACEBOOK_APP_SECRET
         
-        sig = base64_url_decode_php_style(encoded_sig)
-        data = json.loads(base64_url_decode_php_style(payload))
-
+        enc_signature, enc_payload = signed_request.split('.', 1)
+        signature, payload = map(base64_url_decode_php_style, (enc_signature, enc_payload))
+        data = json.loads(payload)
         algo = data.get('algorithm').upper()
+        
         if  algo != 'HMAC-SHA256':
-            send_warning("Unknown algorithm: only HMAC-SHA256 is supported, but '%s' was specified.", algo)
-            logger.error('Unknown algorithm: %r' % algo)
+            logger.error('Unsupported algorithm: %r' % algo)
             return None
         else:
-            expected_sig = hmac.new(secret, msg=payload, digestmod=hashlib.sha256).digest()
-
-        if sig != expected_sig:
-            send_warning("Signature %r isn't valid (expected: %r)", sig, expected_sig)
+            calc_signature = hmac.new(secret, msg=enc_payload, digestmod=hashlib.sha256).digest()
+        
+        if signature != calc_signature:
+            logger.error("Invalid signature (got: %r, expected: %r)", (signature, calc_signature))
             return None
         else:
-            logger.debug('Valid signed request received.')
+            logger.debug("Received a valid signed request")
             return data
 
     @classmethod

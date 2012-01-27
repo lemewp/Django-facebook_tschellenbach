@@ -5,6 +5,7 @@ import logging
 from django_facebook.api import _get_access_token_from_request, \
     get_facebook_graph
 import django_facebook.settings as facebook_settings
+from open_facebook.api import FacebookAuthorization
 
 logger = logging.getLogger(__name__) 
 
@@ -36,22 +37,26 @@ class FacebookRequestMiddleware:
           is passed -> redirect to somewhere
         - We should also prevent CSRF code to be checked if the request
           is using ``signed_request``.
+        
+        .. NOTE::
+            This middleware should go before CsrfMiddleware in order
+            to skip CSRF validation for POSTs inside canvas apps,
+            in case a valid signed_request was received.
         """
         
         logger.debug("Running FacebookRequest Middleware")
         
         request.fb_info = {
-            "is_canvas": None,
+            "is_canvas": False,
             "is_signed_request": None,
             "signed_request_type": None,
             "app_request_ids": None,
             "is_authenticated": None,
         }
         
-        #return ## STOP HERE ATM ---------
-        
         ## Set ``request.csrf_processing_done = True`` to skip CSRF checking for signed_request
         
+        ## Check signed request
         _sr_from = None
         _sr_data = None
         
@@ -68,8 +73,28 @@ class FacebookRequestMiddleware:
             cookie_data = request.COOKIES.get(cookie_name)
             if cookie_data:
                 logger.debug("Got a signed_request via cookie")
+                _sr_from = 'cookie'
+                _sr_data = cookie_data
         
-        return
+        if _sr_data:
+            parsed_data = FacebookAuthorization.parse_signed_data(_sr_data)
+            if parsed_data:
+                if _sr_from in ('post', 'get'):
+                    request.fb_info['is_canvas'] = True
+                request.fb_info['is_signed_request'] = True
+                request.fb_info['signed_request_type'] = _sr_from
+                
+                ## Skip CSRF validation in case of valid signed request
+                request.csrf_processing_done = True
+                
+                ## TODO: Log in the user
+        
+        ## --- Application requests --------------------------------------------
+        if request.REQUEST.has_key('request_ids'):
+            request.fb_info['app_request_ids'] = request.REQUEST['request_ids'].split(',')
+
+
+        return###===================================== STOP HERE ===============
         
         ## TODO: Check whether we are running inside canvas
         ##  - if we have a signed_request, we are inside canvas

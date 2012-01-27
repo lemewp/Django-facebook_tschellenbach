@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def facebook_required(view_func=None,
                       scope=fb_settings.FACEBOOK_DEFAULT_SCOPE,
                       redirect_field_name=REDIRECT_FIELD_NAME,
-                      login_url=None, extra_params=None, canvas=False):
+                      login_url=None, extra_params=None, canvas=None):
     """Decorator which makes the view require the given Facebook
     permissions, redirecting to the authorization page if necessary.
 
@@ -33,11 +33,13 @@ def facebook_required(view_func=None,
     :param login_url: URL of the login page, in case permissions
         checking fails.
     :param extra_params: Extra paramters to be added to redirect_uri
-    :param canvas: Whether we are running inside canvas or not
+    :param canvas: Whether we are running inside canvas or not.
+        If not specified, its value will be determined at runtime
+        from ``request.fb_info['is_canvas']``.
     """
     from django_facebook.utils import test_permissions
     scope_list = parse_scope(scope)
-
+    
     def actual_decorator(view_func):
         @wraps(view_func, assigned=available_attrs(view_func))
         def _wrapped_view(request, *args, **kwargs):
@@ -46,6 +48,8 @@ def facebook_required(view_func=None,
                 return view_func(request, *args, **kwargs)
             else:
                 logger.info('requesting access with redirect uri: %s', redirect_uri)
+                if canvas is None:
+                    canvas = getattr(request, 'fb_info', {}).get('is_canvas', False)
                 response = response_redirect(oauth_url, canvas=canvas)
                 return response
         return _wrapped_view
@@ -58,7 +62,7 @@ def facebook_required(view_func=None,
 def facebook_required_lazy(view_func=None,
                            scope=fb_settings.FACEBOOK_DEFAULT_SCOPE,
                            redirect_field_name=REDIRECT_FIELD_NAME,
-                           login_url=None, extra_params=None, canvas=False):
+                           login_url=None, extra_params=None, canvas=None):
     """Decorator which makes the view require the given Facebook
     permissions, redirecting to the authorization page if necessary.
     
@@ -71,7 +75,9 @@ def facebook_required_lazy(view_func=None,
     :param login_url: URL of the login page, in case permissions
         checking fails.
     :param extra_params: Extra paramters to be added to redirect_uri
-    :param canvas: Whether we are running inside canvas or not
+    :param canvas: Whether we are running inside canvas or not.
+        If not specified, its value will be determined at runtime
+        from ``request.fb_info['is_canvas']``.
     """
     from django_facebook.utils import test_permissions
     from open_facebook import exceptions as open_facebook_exceptions
@@ -94,6 +100,8 @@ def facebook_required_lazy(view_func=None,
                     raise
                 else:
                     logger.info(u'Requesting access with redirect_uri: %s, error was %s', redirect_uri, e)
+                    if canvas is None:
+                        canvas = getattr(request, 'fb_info', {}).get('is_canvas', False)
                     response = response_redirect(oauth_url, canvas=canvas)
                     return response
         return _wrapped_view
