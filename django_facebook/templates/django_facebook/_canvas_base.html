@@ -3,7 +3,7 @@
 <html><head>
     <title>{{ page_title|default:"Django-facebook canvas app" }}</title>
     {% block extrahead %}{% endblock extrahead %}
-</head><body>
+</head><body class="{{ FACEBOOK_BODY_CLASSES }}">
 
     <!-- The main content for the canvas page -->
 	{% block content %}

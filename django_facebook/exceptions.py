@@ -1,6 +1,2 @@
-class FacebookException(Exception):
-    pass
-
-
-class IncompleteProfileError(FacebookException):
-    pass
+class FacebookException(Exception): pass
+class IncompleteProfileError(FacebookException): pass

@@ -4,19 +4,33 @@
 <!-- JavaScript to load the FB JavaScript SDK -->
 <script src="{{ STATIC_URL }}js/facebook.js" type="text/javascript"></script>
 <script>
-    facebookAppId = '{{ FACEBOOK_APP_ID }}';
-    facebookDefaultScope = {{ FACEBOOK_DEFAULT_SCOPE_JS }};
-    staticUrl = '{{ STATIC_URL }}';
-    function facebookJSLoaded(){
-        FB.init({
-        	appId: facebookAppId,
-        	status: false,
-        	cookie: true,
-        	xfbml: true,
-        	oauth: true,
-    	});
-    }
-    window.fbAsyncInit = facebookJSLoaded;
-    F = new facebookClass(facebookAppId);
-    F.load();
+{% if FACEBOOK_SETTINGS %}
+var facebookCfg = {{ FACEBOOK_SETTINGS }};
+{% else %}
+var facebookCfg = null;
+{% endif %}
+var facebookAppId = '{{ FACEBOOK_APP_ID }}';
+var facebookDefaultScope = {{ FACEBOOK_DEFAULT_SCOPE_JS }};
+var staticUrl = '{{ STATIC_URL }}';
+function facebookJSLoaded(){
+    FB.init({
+    	appId: facebookAppId,
+    	status: false,
+    	cookie: true,
+    	xfbml: true,
+    	oauth: true,
+	});
+}
+window.fbAsyncInit = facebookJSLoaded;
+F = new facebookClass(facebookAppId);
+F.load();
+
+{% if FACEBOOK_CANVAS_HANDLING == 'force' %}
+// Force canvas
+alert("Forcing canvas!");
+{% endif %}
+{% if FACEBOOK_CANVAS_HANDLING == 'escape' %}
+// Escape canvas
+alert("Escaping canvas!");
+{% endif %}
 </script>

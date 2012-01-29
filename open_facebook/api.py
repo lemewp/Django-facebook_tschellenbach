@@ -273,18 +273,57 @@ class FacebookAuthorization(FacebookConnection):
         data = json.loads(payload)
         algo = data.get('algorithm').upper()
         
-        if  algo != 'HMAC-SHA256':
-            logger.error('Unsupported algorithm: %r' % algo)
-            return None
-        else:
-            calc_signature = hmac.new(secret, msg=enc_payload, digestmod=hashlib.sha256).digest()
+        try:
+            if cls.verify_signature(enc_payload, secret, signature, algo):
+                logger.debug("Received a valid signed request")
+                return data
+            else:
+                logger.error("Invalid signed_data signature!")
+                return
+        except:
+            logger.exception("Something went wrong while verifying the signed_request.")
+    
+    @classmethod
+    def calculate_signature(cls, data, secret, algorithm=None):
+        """Calculate the signature of ``data`` using ``secret`` as key
+        and the specified ``algorithm``.
         
-        if signature != calc_signature:
-            logger.error("Invalid signature (got: %r, expected: %r)", (signature, calc_signature))
-            return None
+        :param data: The data to be signed
+        :param secret: The secret shared key
+        :param algorithm: The algorithm to be used. Defaults to ``HMAC-SHA256``.
+            Must be one of algorithms supported by hashlib, or an equivalent
+            calllable / function.
+        """
+        import hmac, hashlib
+        
+        if algorithm is None:
+            algorithm = 'HMAC-SHA256'
+    
+        if isinstance(algorithm, basestring):
+            if algorithm == 'HMAC-SHA256':
+                digestmod = hashlib.sha256
+            elif algorithm == 'HMAC-MD5':
+                digestmod = hashlib.md5
+            elif algorithm == 'HMAC-SHA1':
+                digestmod = hashlib.sha1
+            elif algorithm == 'HMAC-SHA224':
+                digestmod = hashlib.sha224
+            elif algorithm == 'HMAC-SHA384':
+                digestmod = hashlib.sha384
+            elif algorithm == 'HMAC-SHA512':
+                digestmod = hashlib.sha512
+            else:
+                raise ValueError("Unsupported algorithm: %r" % algorithm)
         else:
-            logger.debug("Received a valid signed request")
-            return data
+            ## Try using algorithm directly
+            digestmod = algorithm
+        return hmac.new(secret, msg=data, digestmod=digestmod).digest()
+    
+    @classmethod
+    def verify_signature(cls, data, secret, signature, algorithm=None):
+        """Verify the ``signature`` on ``data`` using ``secret`` key."""
+        _c_sig = cls.calculate_signature(data, secret, algorithm)
+        return signature == _c_sig
 
     @classmethod
     def get_app_access_token(cls):
@@ -526,3 +565,4 @@ class OpenFacebook(FacebookConnection):
         logger.info('Request URL: %s', url)
         response = self._request(url, post_data)
         return response
+

@@ -19,24 +19,19 @@ logger = logging.getLogger(__name__)
 
 
 class CONNECT_ACTIONS:
-    class LOGIN:
-        pass
-
-    class CONNECT(LOGIN):
-        pass
-
-    class REGISTER:
-        pass
+    class LOGIN: pass
+    class CONNECT(LOGIN): pass
+    class REGISTER: pass
 
 
 def connect_user(request, access_token=None, facebook_graph=None):
-    '''
+    """
     Given a request either
 
     - (if authenticated) connect the user
     - login
     - register
-    '''
+    """
     user = None
     graph = facebook_graph or get_facebook_graph(request, access_token)
     facebook = FacebookUserConverter(graph)
@@ -117,10 +112,10 @@ def _login_user(request, facebook, authenticated_user, update=False):
 
 
 def _connect_user(request, facebook):
-    '''
+    """
     Update the fields on the user model and connects it to the facebook account
 
-    '''
+    """
     if not request.user.is_authenticated():
         raise ValueError(
             'Connect user can only be used on authenticated users')
@@ -135,14 +130,14 @@ def _connect_user(request, facebook):
 
 def _register_user(request, facebook, profile_callback=None,
                    remove_old_connections=False):
-    '''
+    """
     Creates a new user and authenticates
     The registration form handles the registration and validation
     Other data on the user profile is updates afterwards
 
     if remove_old_connections = True we will disconnect old
     profiles from their facebook flow
-    '''
+    """
     if not facebook.is_authenticated():
         raise ValueError(
             'Facebook needs to be authenticated for connect flows')
@@ -201,10 +196,10 @@ def _register_user(request, facebook, profile_callback=None,
 
 
 def _remove_old_connections(facebook_id, current_user_id=None):
-    '''
+    """
     Removes the facebook id for profiles with the specified facebook id
     which arent the current user id
-    '''
+    """
     profile_class = get_profile_class()
     other_facebook_accounts = profile_class.objects.filter(
         facebook_id=facebook_id)
@@ -215,9 +210,9 @@ def _remove_old_connections(facebook_id, current_user_id=None):
 
 
 def _update_user(user, facebook):
-    '''
+    """
     Updates the user and his/her profile with the data from facebook
-    '''
+    """
     # if you want to add fields to ur user model instead of the
     # profile thats fine
     # partial support (everything except raw_data and facebook_id is included)

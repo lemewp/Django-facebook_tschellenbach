@@ -1,3 +1,7 @@
+"""
+Decorators to be used to make views require Facebook connection / etc.
+"""
+
 import logging
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -48,9 +52,10 @@ def facebook_required(view_func=None,
                 return view_func(request, *args, **kwargs)
             else:
                 logger.info('requesting access with redirect uri: %s', redirect_uri)
-                if canvas is None:
-                    canvas = getattr(request, 'fb_info', {}).get('is_canvas', False)
-                response = response_redirect(oauth_url, canvas=canvas)
+                _canvas = canvas # Bring into local scope
+                if _canvas is None:
+                    _canvas = getattr(request, 'fb_info', {}).get('is_canvas', False)
+                response = response_redirect(oauth_url, canvas=_canvas)
                 return response
         return _wrapped_view
 
@@ -100,9 +105,10 @@ def facebook_required_lazy(view_func=None,
                     raise
                 else:
                     logger.info(u'Requesting access with redirect_uri: %s, error was %s', redirect_uri, e)
-                    if canvas is None:
-                        canvas = getattr(request, 'fb_info', {}).get('is_canvas', False)
-                    response = response_redirect(oauth_url, canvas=canvas)
+                    _canvas = canvas # Bring into local scope
+                    if _canvas is None:
+                        _canvas = getattr(request, 'fb_info', {}).get('is_canvas', False)
+                    response = response_redirect(oauth_url, canvas=_canvas)
                     return response
         return _wrapped_view
 
