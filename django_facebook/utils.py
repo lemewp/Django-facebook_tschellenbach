@@ -89,8 +89,12 @@ def get_oauth_url(request, scope, redirect_uri=None, extra_params=None):
     if extra_params:
         _uri_args.update(extra_params)
     
+    ## Originally had a call to ParsedResult._replace which is not supported
+    _mod_parsed = list(_parsed_uri)
+    _mod_parsed[4] = _uri_args.urlencode()
+    
     ## Recreate redirect_uri
-    redirect_uri = urlparse.urlunparse(_parsed_uri._replace(query=_uri_args.urlencode()))
+    redirect_uri = urlparse.urlunparse(tuple(_mod_parsed))
 
     query_dict['redirect_uri'] = redirect_uri
     url = 'https://www.facebook.com/dialog/oauth?%s' % query_dict.urlencode()
