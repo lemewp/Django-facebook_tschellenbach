@@ -6,6 +6,9 @@ from django_facebook.api import _get_access_token_from_request, \
     get_facebook_graph
 import django_facebook.settings as facebook_settings
 from open_facebook.api import FacebookAuthorization
+from django.contrib.auth import authenticate, login
+from django_facebook.utils import get_profile_class
+#from user import models as models_user
 
 logger = logging.getLogger(__name__) 
 
@@ -69,25 +72,38 @@ class FacebookRequestMiddleware:
             _sr_from = 'get'
             _sr_data = request.GET['signed_request']
         else:
+            pass
+            # Disabled as this would generate _sr_data for every image,
+            # css, etc
+            """
             cookie_name = 'fbsr_%s' % facebook_settings.FACEBOOK_APP_ID
             cookie_data = request.COOKIES.get(cookie_name)
             if cookie_data:
                 logger.debug("Got a signed_request via cookie")
                 _sr_from = 'cookie'
                 _sr_data = cookie_data
+            """
         
         if _sr_data:
             parsed_data = FacebookAuthorization.parse_signed_data(_sr_data)
+            
             if parsed_data:
                 if _sr_from in ('post', 'get'):
                     request.fb_info['is_canvas'] = True
                 request.fb_info['is_signed_request'] = True
                 request.fb_info['signed_request_type'] = _sr_from
+                request.fb_info['signed_request_data'] = parsed_data
                 
                 ## Skip CSRF validation in case of valid signed request
                 request.csrf_processing_done = True
                 
-                ## TODO: Log in the user
+                ## Login the user
+                user = authenticate(facebook_id=parsed_data['user_id'])
+                
+                if user and (not request.user.is_authenticated() or request.user != user):
+                    # If the FB user is registered with the app and isn't logged in-
+                    login(request, user)
+                      
         
         ## --- Application requests --------------------------------------------
         if request.REQUEST.has_key('request_ids'):
@@ -111,3 +127,4 @@ class FacebookRequestMiddleware:
             fb = get_facebook_graph(request, access_token)
         
         pass
+
