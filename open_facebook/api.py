@@ -265,6 +265,9 @@ class FacebookAuthorization(FacebookConnection):
         import hmac
         import hashlib
         
+        if not signed_request:
+            return
+        
         if secret is None:
             secret = facebook_settings.FACEBOOK_APP_SECRET
         
